@@ -1,0 +1,1023 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Crime map color preview</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#FFFFFF; --fg:#1A1A1A; --muted:#595959; --line:#E3E3E3; --panel:#F7F7F7; --accent:#1A1A1A; --accent-fg:#FFFFFF; --field:#FFFFFF;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#141414; --fg:#F2F2F2; --muted:#A8A8A8; --line:#333333; --panel:#1E1E1E; --accent:#F2F2F2; --accent-fg:#141414; --field:#262626;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#141414; --fg:#F2F2F2; --muted:#A8A8A8; --line:#333333; --panel:#1E1E1E; --accent:#F2F2F2; --accent-fg:#141414; --field:#262626;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:'Poppins',system-ui,-apple-system,'Segoe UI',sans-serif;font-size:14px;line-height:1.5}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--bg);z-index:10}
+.page{max-width:1760px;margin:0 auto;padding:20px 24px 40px}
+h1{font-size:22px;font-weight:600;margin:0 0 4px}
+.sub{color:var(--muted);margin:0 0 20px;max-width:760px}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:24px;align-items:start}
+@media (max-width:1100px){.layout{grid-template-columns:minmax(0,1fr)}}
+.stage-wrap{position:relative;width:100%;overflow:hidden;border:1px solid var(--line);border-radius:12px;background:#FFFFFF}
+.stage{position:absolute;left:0;top:0;width:1440px;height:900px;transform-origin:0 0;font-family:'Poppins',system-ui,sans-serif;color:#1A1A1A;background:#FFFFFF;
+  --bg-map:#EEEDE9;--park:#E1E9D8;--water:#D3E2EA;--casing:#D6D3CC;--hwy-casing:#CFCBC2;--grid1:#FAF9F6;--grid2:#FFFFFF}
+.stage[data-base="light"]{--bg-map:#F4F4F3;--park:#E9ECE6;--water:#E2E9ED;--casing:#E0DFDC;--hwy-casing:#D8D7D3;--grid1:#FBFBFA;--grid2:#FFFFFF}
+.k0{fill:var(--c0)}.k1{fill:var(--c1)}.k2{fill:var(--c2)}.k3{fill:var(--c3)}.k4{fill:var(--c4)}.k5{fill:var(--c5)}
+.sw{display:inline-block;width:18px;height:18px;border-radius:5px;box-shadow:inset 0 0 0 1px rgba(26,26,26,0.18)}
+.sw0{background:var(--c0)}.sw1{background:var(--c1)}.sw2{background:var(--c2)}.sw3{background:var(--c3)}.sw4{background:var(--c4)}.sw5{background:var(--c5)}
+.mbtn{font-family:'Poppins',sans-serif;border:0;cursor:pointer}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:4px 16px}
+.acc{border-top:1px solid var(--line)}
+.acc:first-of-type{border-top:0}
+.acc summary{display:flex;align-items:center;justify-content:space-between;min-height:52px;font-weight:600;font-size:14px;cursor:pointer;list-style:none;color:var(--fg)}
+.acc summary::-webkit-details-marker{display:none}
+.acc summary .chev2{flex:none;transition:transform .2s ease}
+.acc[open] summary .chev2{transform:rotate(180deg)}
+.acc-b{padding:2px 0 16px}
+.acc-vision{padding:16px 0;margin:0}
+input[name='vision']{width:16px;height:16px;margin:0;cursor:pointer;accent-color:var(--accent)}
+fieldset{border:0;margin:0 0 18px;padding:0;min-width:0}
+legend{font-weight:600;font-size:13px;padding:0;margin-bottom:8px}
+.presets{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.presets button{font-family:inherit;font-size:13px;color:var(--fg);background:var(--field);border:1.5px solid var(--line);border-radius:10px;padding:8px 10px;text-align:left;cursor:pointer;min-height:44px}
+.explorations-grid{display:grid !important;grid-template-columns:1fr 1fr !important;gap:12px !important;width:100% !important;flex:none !important}
+.explorations-grid button{width:100% !important;flex:none !important}
+.presets button[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.strip{display:flex;height:10px;margin-top:6px;border-radius:5px;overflow:hidden}
+.strip span{flex:1}
+.crow{display:grid;grid-template-columns:96px 44px minmax(0,1fr);gap:8px;align-items:center;margin-bottom:6px}
+.crow label{font-size:13px}
+.crow input[type=color]{width:44px;height:44px;padding:2px;border:1px solid var(--line);border-radius:8px;background:var(--field);cursor:pointer}
+input[type=text],select,.linkbox{font-family:inherit;font-size:13px;color:var(--fg);background:var(--field);border:1px solid var(--line);border-radius:8px;padding:0 10px;height:44px;width:100%}
+.hex{font-variant-numeric:tabular-nums;text-transform:uppercase}
+.rowf{display:flex;flex-direction:column;gap:4px;margin-bottom:12px}
+.rowf label{font-size:13px}
+.rowf .val{color:var(--muted)}
+input[type=range]{width:100%;height:32px;accent-color:var(--accent)}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th,td{text-align:left;padding:5px 4px;border-bottom:1px solid var(--line)}
+th{font-weight:500;color:var(--muted)}
+td .sw{vertical-align:middle;margin-right:6px}
+.note{color:var(--muted);font-size:12px;margin:8px 0 0}
+.warn{color:var(--fg);background:rgba(242,154,46,0.18);border:1px solid rgba(207,106,26,0.5);border-radius:8px;padding:8px 10px;font-size:12px;margin-top:8px}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.btns button{font-family:inherit;font-size:13px;min-height:44px;padding:0 16px;border-radius:10px;border:1px solid var(--line);background:var(--field);color:var(--fg);cursor:pointer}
+.btns button.primary{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+textarea{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;color:var(--fg);background:var(--field);border:1px solid var(--line);border-radius:8px;width:100%;height:132px;padding:8px 10px;resize:vertical}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+[hidden]{display:none !important}
+.mapzoom{transform-origin:910px 440px;transform:scale(var(--zoom,1));transition:transform .35s ease}
+@media (prefers-reduced-motion: reduce){.mapzoom{transition:none}}
+#mapLabels{stroke-width:calc(4px / var(--zoom,1))}
+#mapLabels .n{font-size:calc(13px / var(--zoom,1));font-weight:600;letter-spacing:calc(2.6px / var(--zoom,1))}
+#mapLabels .r{font-size:calc(11px / var(--zoom,1));font-weight:500}
+#listOutline polygon{vector-effect:non-scaling-stroke}
+#mapZoom > :not(#polys){pointer-events:none}
+#polys polygon{cursor:pointer}
+#polys polygon:focus-visible{outline:3px solid #1A1A1A;outline-offset:-3px}
+#callout{z-index:6;width:380px;background:#FFFFFF;border-radius:22px;box-shadow:0 8px 28px rgba(26,26,26,0.24);color:#1A1A1A;overflow:hidden}
+.cc-head{display:flex;justify-content:space-between;align-items:flex-start;padding:20px 14px 14px 24px;border-bottom:1px solid #C4C4C4}
+.cc-title{font-size:20px;font-weight:600;line-height:1.2}
+.cc-sub{font-size:14px;margin-top:6px}
+.cc-x{flex:none;width:44px;height:44px;margin:-8px 0 0 8px;border:0;background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;border-radius:50%}
+.cc-row{display:flex;gap:14px;padding:14px 24px 6px;align-items:flex-start}
+.cc-row:last-of-type{padding-bottom:14px}
+.cc-row .sbox{width:48px;height:48px}
+.cc-row .sbox b{font-size:20px}
+.cc-row .sbox span{font-size:11px}
+.cc-row .sbox i{width:18px}
+.cc-row b.t{font-size:16px;font-weight:600}
+.cc-desc{font-size:13px;color:#595959;margin-top:4px;line-height:1.35}
+.cc-fine{font-size:11px;line-height:1.45;color:#595959;border-top:1px solid #C4C4C4;margin:0;padding:12px 24px 14px}
+.zbtn[aria-disabled="true"]{opacity:0.35;cursor:default}
+.stage button{font-family:inherit}
+#chips,#otherNote{left:532px;transition:left .25s ease}
+.stage[data-rail="closed"] #chips,.stage[data-rail="closed"] #otherNote{left:84px}
+#legend{position:absolute;left:524px;right:24px;top:24px;height:84px;display:flex;align-items:stretch;background:#FFFFFF;color:#1A1A1A;border-radius:14px;box-shadow:0 2px 10px rgba(26,26,26,0.18);overflow:hidden;transition:left .25s ease}
+.stage[data-rail="closed"] #legend{left:80px}
+.banner-ico{flex:none;width:84px;background:#1A1A1A;display:flex;align-items:center;justify-content:center}
+.banner-txt{flex:none;width:262px;padding:0 8px 0 16px;display:flex;flex-direction:column;justify-content:center;gap:6px}
+.banner-title{display:flex;align-items:center;gap:6px;font-size:16px;font-weight:600;line-height:1.2}
+.info{width:24px;height:24px;padding:0;border:0;background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;border-radius:50%}
+.banner-sub{display:flex;align-items:center;gap:30px;font-size:13px;color:#595959}
+.selwrap{position:relative;display:inline-flex;align-items:center}
+#legend select{-webkit-appearance:none;appearance:none;height:auto;width:auto;min-height:0;margin:0;border:0;border-radius:0;box-shadow:none;background:transparent;padding:0 34px 0 0;font-family:inherit;font-size:17px;font-weight:400;line-height:1.3;color:#1A1A1A;cursor:pointer}
+.selwrap svg{position:absolute;right:0;pointer-events:none}
+.bsrc{white-space:nowrap}
+.bsrc .linkbtn{font-size:13px}
+.banner-bar{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;padding:0 8px 0 8px}
+.segs{display:flex;height:14px;border-radius:7px;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(26,26,26,0.14)}
+.segs span{flex:1}
+.labs{display:grid;grid-template-columns:repeat(6,1fr);margin-top:6px;font-size:12px;text-align:center;line-height:1.25;color:#404040}
+.banner-x{flex:none;width:60px;border:0;background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.mapnote{position:absolute;top:40px;height:44px;display:flex;align-items:center;padding:0 18px;background:#FFFFFF;border-radius:22px;box-shadow:0 2px 8px rgba(26,26,26,0.18);font-size:14px;color:#1A1A1A}
+.rail{--rail-line:#C4C4C4;position:absolute;left:24px;top:24px;width:432px;height:788px;display:flex;flex-direction:column;gap:10px;transition:transform .25s ease;z-index:3}
+.stage[data-rail="closed"] .rail{transform:translateX(-480px);visibility:hidden;transition:transform .25s ease,visibility 0s linear .25s}
+.rail-toggle{position:absolute;top:40px;width:44px;height:44px;border:0;border-radius:10px;background:#FFFFFF;box-shadow:0 2px 8px rgba(26,26,26,0.18);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:left .25s ease;z-index:4}
+.rail-toggle svg{transition:transform .25s ease}
+.stage[data-rail="open"] .rail-toggle{left:468px}
+.stage[data-rail="closed"] .rail-toggle{left:24px}
+.stage[data-rail="closed"] .rail-toggle svg{transform:rotate(180deg)}
+.tabs{background:#FFFFFF;border-radius:14px;padding:8px;flex:none;box-shadow:0 2px 8px rgba(26,26,26,0.18)}
+.tablist{display:flex;background:#F0F0F0;border-radius:999px;padding:3px;gap:2px}
+.tablist button{flex:1;height:40px;border:1.5px solid transparent;border-radius:999px;background:transparent;font-size:14px;font-weight:500;color:#1A1A1A;cursor:pointer}
+.tablist button[aria-selected="true"]{background:#FFFFFF;border-color:#8C8C8C;font-weight:600}
+.opts{flex:1;min-height:0;display:flex;flex-direction:column;background:#FFFFFF;border-radius:14px;box-shadow:0 2px 8px rgba(26,26,26,0.18)}
+.opts-scroll{flex:1;min-height:0;overflow-y:auto;padding:4px 18px;position:relative;overscroll-behavior:contain}
+.opts-foot{padding:12px 18px 14px;border-top:1px solid var(--rail-line);flex:none}
+.reset{width:100%;height:48px;border-radius:24px;border:1.5px solid #1A1A1A;background:#FFFFFF;font-size:15px;font-weight:500;color:#1A1A1A;cursor:pointer}
+.sec{border-top:1px solid var(--rail-line)}
+.sec:first-child{border-top:0}
+.sec-top{padding:4px 0 8px}
+.sec-h{display:flex;align-items:center;gap:10px;width:100%;min-height:56px;padding:0;border:0;background:transparent;font-size:17px;font-weight:600;color:#1A1A1A;cursor:pointer;text-align:left}
+.sec-h > span{flex:1}
+.sec-h .chev{transition:transform .2s ease}
+.sec-h[aria-expanded="false"] .chev{transform:rotate(180deg)}
+.sec-b{padding:0 0 12px}
+.ropt{display:flex;align-items:center;gap:12px;min-height:44px;font-size:15px;color:#1A1A1A;cursor:pointer}
+.ropt input{-webkit-appearance:none;appearance:none;width:24px;height:24px;margin:0;flex:none;cursor:pointer;border-radius:50%;border:1.5px solid #767676;background:#FFFFFF;transition:border-color .15s ease,background .15s ease,box-shadow .15s ease}
+.ropt:hover input{border-color:#1A1A1A}
+.ropt input:checked{border:2px solid #1A1A1A;background:#1A1A1A;box-shadow:inset 0 0 0 5px #FFFFFF}
+.ropt input:focus-visible{outline:2px solid #1A1A1A;outline-offset:3px}
+.muted-p{font-size:13px;color:#595959;margin:0 0 4px}
+.card{background:#FFFFFF;border-radius:14px;padding:16px;box-shadow:0 2px 8px rgba(26,26,26,0.18)}
+.card h3{font-size:18px;font-weight:600;margin:0 0 8px}
+.stubcard{flex:1;font-size:13px;color:#595959;letter-spacing:0.02em}
+.hood{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:10px;overscroll-behavior:contain;margin:0 -10px;padding:2px 10px 14px}
+.hood .card{flex:none}
+.hrow{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--rail-line)}
+.hrow:last-of-type{border-bottom:0}
+.htitle{display:flex;align-items:center;gap:8px;font-size:14px;margin-bottom:2px}
+.hrow p{margin:0;font-size:12.5px;line-height:1.4;color:#404040}
+.circ{flex:none;width:40px;height:40px;border-radius:50%;color:#FFFFFF;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1}
+.circ b,.sbox b{font-size:17px;font-weight:600}
+.circ i,.sbox i{display:block;width:14px;height:1.5px;background:currentColor;margin:2px 0 1px}
+.circ span,.sbox span{font-size:10px}
+.sbox{flex:none;width:40px;height:40px;border-radius:8px;background:#F0F0F0;color:#1A1A1A;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1}
+.mini{display:inline-flex;align-items:center;justify-content:center;min-width:40px;height:26px;padding:0 6px;border-radius:6px;background:#F0F0F0;font-size:11px;color:#404040;flex:none}
+.mini b{font-size:14px;font-weight:600;color:#1A1A1A;margin-right:1px}
+.crl{display:flex;align-items:center;gap:12px;padding:4px 0;font-size:13.5px}
+.sub-h{display:flex;align-items:center;gap:10px;padding:10px 0 4px}
+.sub-h b{font-size:13.5px}
+.pill{display:inline-block;font-size:12px;font-weight:500;line-height:1.2;padding:3px 10px;border-radius:999px}
+.sepbar{margin:0 8px;color:#595959}
+.pct{font-size:12px;color:#404040;margin:4px 0 0}
+.otitle{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.ov{display:flex;gap:12px;align-items:flex-start;padding-bottom:12px;border-bottom:1px solid var(--rail-line)}
+.ov b{font-size:14px;line-height:1.3;display:block}
+.fine{font-size:10.5px;line-height:1.45;color:#595959;border-top:1px solid var(--rail-line);margin:12px -16px -16px;padding:12px 16px 14px}
+.linkbtn{background:none;border:0;padding:0;font-size:13px;color:#1A1A1A;text-decoration:underline;cursor:pointer;text-align:left}
+.smeta{font-size:12px;color:#595959;margin-top:2px}
+.stars{font-size:12px;letter-spacing:1px;color:#1A1A1A}
+.stars span{color:#BDBDBD}
+.cardhead{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:6px}
+.cardhead h3{margin:0}
+.src{font-size:10.5px;color:#595959;margin:8px 0 0}
+
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+#presets{display:flex;flex-direction:column;gap:12px}
+#presets>div:nth-child(1){font-size:13px;font-weight:600;color:#1A1A1A}
+
+
+#presets>button .strip{display:flex;gap:2px;height:16px}
+#presets>button .strip span{flex:1;border-radius:2px}
+#presets>div:nth-child(3){height:1px;background:var(--line);margin:4px 0}
+#presets>div:nth-child(4){font-size:13px;font-weight:600;color:#1A1A1A}
+#presets>button{text-align:left;padding:16px 18px;border:2px solid #E3E3E3;border-radius:16px;background:#FFFFFF;cursor:pointer;transition:all .2s ease;font-size:15px;min-height:auto;width:100%}
+#presets>button:hover{box-shadow:0 2px 8px rgba(26,26,26,0.12);border-color:#C4C4C4}
+#presets>button[data-selected="true"]{border-color:#1A1A1A;background:#FAFAFA;box-shadow:0 2px 12px rgba(26,26,26,0.16)}
+#presets>button span{display:block;font-weight:600;margin-bottom:10px;color:#1A1A1A;font-size:14px}
+#presets>button .strip{display:flex;gap:3px;height:20px}
+#presets>button .strip span{flex:1;border-radius:3px}
+.presets-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%}
+
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+<filter id="v-deuteranopia"><feColorMatrix type="matrix" values="0.367322 0.860646 -0.227968 0 0  0.280085 0.672501 0.047413 0 0  -0.011820 0.042940 0.968881 0 0  0 0 0 1 0"/></filter>
+<filter id="v-protanopia"><feColorMatrix type="matrix" values="0.152286 1.052583 -0.204868 0 0  0.114503 0.786281 0.099216 0 0  -0.003882 -0.048116 1.051998 0 0  0 0 0 1 0"/></filter>
+<filter id="v-tritanopia"><feColorMatrix type="matrix" values="1.255528 -0.076749 -0.178779 0 0  -0.078411 0.930809 0.147602 0 0  0.004733 0.691367 0.303900 0 0  0 0 0 1 0"/></filter>
+<filter id="v-grayscale"><feColorMatrix type="matrix" values="0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0 0 0 1 0"/></filter>
+</svg>
+
+<div class="page">
+<h1>Crime map color preview</h1>
+<p class="sub">Sample data only. Pick a palette or edit any of the six steps, then copy the link to share your exact settings with the team.</p>
+
+<div class="layout">
+
+<div>
+<div class="stage-wrap" id="wrap">
+<div class="stage" id="stage" data-base="standard">
+
+<div style="position:absolute;left:0;top:0;width:1440px;height:64px;background:#FFFFFF;border-bottom:1px solid #E3E3E3;display:flex;align-items:center;padding:0 24px;z-index:5">
+<span style="font-size:13px;color:#595959;letter-spacing:0.02em">Page header (wireframe stub)</span>
+</div>
+
+<div style="position:absolute;left:0;top:64px;width:1440px;height:836px;background:var(--bg-map)">
+
+<svg width="1440" height="836" viewBox="0 0 1440 836" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Sample map of crime by area, shaded from lowest to highest category" style="position:absolute;left:0;top:0">
+<defs>
+<pattern id="blocksA" width="70" height="52" patternUnits="userSpaceOnUse" patternTransform="rotate(-9)"><path d="M0 0H70M0 0V52" style="stroke:var(--grid1)" stroke-width="3" fill="none"/></pattern>
+<pattern id="blocksB" width="210" height="156" patternUnits="userSpaceOnUse" patternTransform="rotate(-9)"><path d="M0 0H210M0 0V156" style="stroke:var(--grid2)" stroke-width="5" fill="none"/></pattern>
+<filter id="pinShadow" x="-50%" y="-50%" width="200%" height="200%"><feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#1A1A1A" flood-opacity="0.35"/></filter>
+</defs>
+<g id="mapZoom" class="mapzoom">
+<rect x="-800" y="-420" width="2800" height="1640" style="fill:var(--bg-map)"/>
+<rect x="-800" y="-420" width="2800" height="1640" fill="url(#blocksA)"/>
+<rect x="-800" y="-420" width="2800" height="1640" fill="url(#blocksB)"/>
+<g style="fill:var(--park)">
+<rect x="980" y="640" width="230" height="130" rx="44"/>
+<rect x="640" y="30" width="190" height="96" rx="36"/>
+<rect x="1240" y="40" width="170" height="110" rx="40"/>
+<rect x="480" y="610" width="140" height="190" rx="46"/>
+<rect x="-420" y="650" width="300" height="190" rx="60"/>
+<rect x="1560" y="300" width="260" height="170" rx="56"/>
+<rect x="1280" y="930" width="240" height="150" rx="52"/>
+<rect x="-250" y="-250" width="280" height="150" rx="54"/>
+<rect x="1560" y="-330" width="220" height="140" rx="50"/>
+<rect x="150" y="860" width="260" height="160" rx="54"/>
+<rect x="-600" y="40" width="200" height="130" rx="46"/>
+</g>
+<ellipse cx="1180" cy="790" rx="86" ry="40" style="fill:var(--water)"/>
+<ellipse cx="-380" cy="360" rx="150" ry="64" style="fill:var(--water)"/>
+<ellipse cx="1700" cy="860" rx="120" ry="52" style="fill:var(--water)"/>
+<path d="M872 1220 L1000 860 C1050 720 1180 650 1300 570 S1420 430 1480 390 L1700 280 L2000 295" fill="none" style="stroke:var(--water)" stroke-width="16" stroke-linecap="round"/>
+<g fill="none" stroke-linecap="round">
+<path d="M-800 247 L-20 200 L440 172 C640 120 900 192 1200 152 S1440 112 1470 102 L2000 -75" style="stroke:var(--casing)" stroke-width="15"/>
+<path d="M-800 247 L-20 200 L440 172 C640 120 900 192 1200 152 S1440 112 1470 102 L2000 -75" stroke="#FFFFFF" stroke-width="11"/>
+<path d="M-800 481 L-20 505 L460 520 C700 540 1000 600 1470 704 L2000 821" style="stroke:var(--casing)" stroke-width="13"/>
+<path d="M-800 481 L-20 505 L460 520 C700 540 1000 600 1470 704 L2000 821" stroke="#FFFFFF" stroke-width="9"/>
+<path d="M1190 -420 L1135 -20 L1090 150 L1210 330 L1330 560" style="stroke:var(--casing)" stroke-width="11"/>
+<path d="M1190 -420 L1135 -20 L1090 150 L1210 330 L1330 560" stroke="#FFFFFF" stroke-width="7"/>
+<path d="M971 -420 L880 -20 C830 200 760 350 700 480 S620 760 580 880 L467 1220" style="stroke:var(--hwy-casing)" stroke-width="24"/>
+<path d="M971 -420 L880 -20 C830 200 760 350 700 480 S620 760 580 880 L467 1220" stroke="#FFFFFF" stroke-width="19"/>
+</g>
+
+<g id="polys" stroke="#FFFFFF" stroke-linejoin="round" style="fill-opacity:var(--op);stroke-width:calc(var(--gap) / var(--zoom,1))"></g>
+
+<g fill="none" stroke-linecap="round" aria-hidden="true">
+<path d="M872 1220 L1000 860 C1050 720 1180 650 1300 570 S1420 430 1480 390 L1700 280 L2000 295" style="stroke:var(--water)" stroke-width="7" stroke-opacity="0.95"/>
+<g stroke="#FFFFFF" stroke-opacity="0.92">
+<path d="M-800 247 L-20 200 L440 172 C640 120 900 192 1200 152 S1440 112 1470 102 L2000 -75" stroke-width="7"/>
+<path d="M-800 481 L-20 505 L460 520 C700 540 1000 600 1470 704 L2000 821" stroke-width="5"/>
+<path d="M1190 -420 L1135 -20 L1090 150 L1210 330 L1330 560" stroke-width="4"/>
+<path d="M971 -420 L880 -20 C830 200 760 350 700 480 S620 760 580 880 L467 1220" stroke-width="12"/>
+</g>
+</g>
+
+<g id="listOutline">
+<polygon points="895.5,583.6 1106.8,625.7 1081.4,336.1 840.1,361.5" fill="none" stroke="#FFFFFF" stroke-width="7" stroke-linejoin="round"/>
+<polygon points="895.5,583.6 1106.8,625.7 1081.4,336.1 840.1,361.5" fill="none" stroke="#1A1A1A" stroke-width="3" stroke-linejoin="round"/>
+</g>
+
+<g id="mapLabels" font-family="Poppins, sans-serif" fill="#1A1A1A" stroke="#FFFFFF" paint-order="stroke" stroke-linejoin="round" text-anchor="middle">
+<text class="n" x="985" y="505">WINDSOR PARK</text>
+<text class="n" x="980" y="264">SKYVIEW</text>
+<text class="n" x="1306" y="242">CORONADO HILLS</text>
+<text class="n" x="917" y="740">MUELLER</text>
+<text class="n" x="1201" y="513">CHERRYWOOD</text>
+<text class="n" x="-268" y="361">HYDE PARK</text>
+<text class="n" x="-196" y="952">CRESTVIEW</text>
+<text class="n" x="1509" y="538">DELWOOD</text>
+<text class="n" x="1561" y="1025">GOVALLE</text>
+<text class="n" x="1429" y="-100">WILSHIRE</text>
+<text class="n" x="61" y="889">HOLLY</text>
+<text class="n" x="106" y="-29">ROSEWOOD</text>
+<text class="r" x="1150" y="636" transform="rotate(10 1150 636)">E 51st St</text>
+<text class="r" x="640" y="150" transform="rotate(-6 640 150)">E Hwy 290</text>
+</g>
+
+</g>
+<g transform="translate(910 440)" filter="url(#pinShadow)" style="pointer-events:none" aria-hidden="true">
+<path d="M0 0 C-4 -8 -14 -16 -14 -27 A14 14 0 0 1 14 -27 C14 -16 4 -8 0 0Z" fill="#D92228"/>
+<circle cx="0" cy="-27" r="5" fill="#FFFFFF"/>
+</g>
+</svg>
+
+<div id="rail" class="rail" role="region" aria-label="Map panel"></div>
+<button type="button" id="railToggle" class="rail-toggle" aria-expanded="true" aria-controls="rail" aria-label="Collapse left rail">
+<svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M12.5 4.5 L7 10 L12.5 15.5" fill="none" stroke="#1A1A1A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+</button>
+
+<div id="otherNote" class="mapnote" hidden>Only the Crime layer is built in this preview</div>
+
+<div id="callout" hidden role="dialog" aria-label="Crime scores" style="position:absolute;left:800px;top:306px"></div>
+
+<div id="legend" role="region" aria-label="Crime map legend">
+<div class="banner-ico" aria-hidden="true">
+<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 5-3 8.5-7 10-4-1.5-7-5-7-10V6z"/><path d="M12 8v5M12 16v.4"/></svg>
+</div>
+<div class="banner-txt">
+<div class="banner-title"><span>Crime</span>
+<button type="button" class="info" aria-label="About this scale: compared with the national average" title="Compared with the national average"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#1A1A1A" stroke-width="1.4" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="6.5"/><path d="M8 7.2v4M8 4.9v.1"/></svg></button>
+</div>
+<div class="banner-sub">
+<span class="selwrap"><label for="legendDs" class="sr">Crime type</label>
+<select id="legendDs"><option value="overall">Overall</option><option value="violent">Violent</option><option value="property">Property</option></select>
+<svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M4.5 7.5 L10 13 L15.5 7.5" fill="none" stroke="#1A1A1A" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+<span class="bsrc">Source: <button type="button" class="linkbtn">Precisely</button></span>
+</div>
+</div>
+<div class="banner-bar">
+<div class="segs" role="img" aria-label="Crime scale from Lowest to Highest"><span class="sw0"></span><span class="sw1"></span><span class="sw2"></span><span class="sw3"></span><span class="sw4"></span><span class="sw5"></span></div>
+<div class="labs"><span>Lowest</span><span>Low</span><span>Below Average</span><span>Above Average</span><span>High</span><span>Highest</span></div>
+</div>
+<button type="button" id="legendClose" class="banner-x" aria-label="Close crime layer"><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M4.5 4.5 L15.5 15.5 M15.5 4.5 L4.5 15.5" stroke="#1A1A1A" stroke-width="2" stroke-linecap="round" fill="none"/></svg></button>
+</div>
+
+<div style="position:absolute;right:24px;bottom:24px;display:flex;gap:8px;align-items:flex-end">
+<button type="button" class="mbtn" tabindex="-1" style="height:64px;width:96px;background:#FFFFFF;border-radius:10px;box-shadow:0 2px 8px rgba(26,26,26,0.18);font-size:13px;color:#1A1A1A">Fly around</button>
+<button type="button" class="mbtn" tabindex="-1" style="height:64px;width:96px;background:#FFFFFF;border-radius:10px;box-shadow:0 2px 8px rgba(26,26,26,0.18);font-size:13px;color:#1A1A1A">Street View</button>
+<button type="button" class="mbtn" tabindex="-1" style="height:64px;width:96px;background:#FFFFFF;border-radius:10px;box-shadow:0 2px 8px rgba(26,26,26,0.18);font-size:13px;color:#1A1A1A">Satellite</button>
+<button type="button" class="mbtn" tabindex="-1" style="height:64px;width:96px;background:#FFFFFF;border-radius:10px;box-shadow:0 2px 8px rgba(26,26,26,0.18);font-size:13px;color:#1A1A1A">Directions</button>
+<div style="display:flex;flex-direction:column;background:#FFFFFF;border-radius:10px;box-shadow:0 2px 8px rgba(26,26,26,0.18);overflow:hidden">
+<button type="button" class="mbtn zbtn" id="zoomIn" aria-label="Zoom in" style="width:48px;height:48px;background:#FFFFFF;border-bottom:1px solid #E3E3E3;display:flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M9 2 V16 M2 9 H16" stroke="#1A1A1A" stroke-width="2" stroke-linecap="round" fill="none"/></svg></button>
+<button type="button" class="mbtn zbtn" id="zoomOut" aria-label="Zoom out" style="width:48px;height:48px;background:#FFFFFF;display:flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M2 9 H16" stroke="#1A1A1A" stroke-width="2" stroke-linecap="round" fill="none"/></svg></button>
+</div>
+</div>
+
+</div>
+</div>
+</div>
+</div>
+
+<aside class="panel" aria-label="Preview controls">
+
+<details class="acc" open><summary><span>Palette</span><svg class="chev2" width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 7.5 L10 12.5 L15 7.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></summary><div class="acc-b">
+<div class="presets" id="presets"></div>
+</div></details>
+
+<div class="acc acc-vision" style="border-top:1px solid var(--line)">
+<div style="padding:2px 0 16px;font-size:13px">
+<div style="font-weight:600;margin-bottom:12px;color:var(--fg)">Vision check</div>
+<fieldset style="border:0;margin:0;padding:0">
+<legend style="font-size:0;padding:0;margin:0;height:0;overflow:hidden"></legend>
+<div style="display:flex;flex-direction:column;gap:10px">
+<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px"><input type="radio" name="vision" value="none" checked style="cursor:pointer"> <span>Normal vision</span></label>
+<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px"><input type="radio" name="vision" value="deuteranopia" style="cursor:pointer"> <span>Deuteranopia (red-green) — ~1% of population</span></label>
+<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px"><input type="radio" name="vision" value="protanopia" style="cursor:pointer"> <span>Protanopia (red-green) — ~1% of population</span></label>
+<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px"><input type="radio" name="vision" value="tritanopia" style="cursor:pointer"> <span>Tritanopia (blue-yellow) — ~0.001% of population</span></label>
+<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px"><input type="radio" name="vision" value="grayscale" style="cursor:pointer"> <span>Grayscale — ~0.003% of population</span></label>
+</div>
+</fieldset>
+<p class="note" style="margin-top:12px;margin-bottom:0">A rough simulation for quick review, not a substitute for testing with people.</p>
+</div>
+</div>
+
+<details class="acc"><summary><span>Steps (Highest at top)</span><svg class="chev2" width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 7.5 L10 12.5 L15 7.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></summary><div class="acc-b">
+<div id="colorRows"></div>
+<div class="warn" id="warn" hidden></div>
+</div></details>
+
+<details class="acc"><summary><span>Map</span><svg class="chev2" width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 7.5 L10 12.5 L15 7.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></summary><div class="acc-b">
+<div class="rowf">
+<label for="opacity">Area opacity <span class="val" id="opacityVal"></span></label>
+<input type="range" id="opacity" min="40" max="100" step="1">
+</div>
+<div class="rowf">
+<label for="gap">Gap between areas <span class="val" id="gapVal"></span></label>
+<input type="range" id="gap" min="0" max="6" step="0.5">
+</div>
+<div class="rowf">
+<label for="base">Basemap</label>
+<select id="base">
+<option value="standard">Warm gray</option>
+<option value="light">Light neutral</option>
+</select>
+</div>
+<div class="rowf">
+<label for="zoomSel">Map zoom</label>
+<select id="zoomSel">
+<option value="0">Default</option>
+<option value="-1">One level out</option>
+</select>
+</div>
+<div class="rowf">
+<label for="dataset">Sample data</label>
+<select id="dataset">
+<option value="overall">Overall crime</option>
+<option value="violent">Violent crime</option>
+<option value="property">Property crime</option>
+</select>
+</div>
+<div class="rowf">
+<label for="listCat">Category of the listing’s area</label>
+<select id="listCat"></select>
+</div>
+</div></details>
+
+<details class="acc"><summary><span>Contrast of each step against the basemap</span><svg class="chev2" width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 7.5 L10 12.5 L15 7.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></summary><div class="acc-b">
+<table>
+<thead><tr><th scope="col">Step</th><th scope="col">Color</th><th scope="col">Ratio</th></tr></thead>
+<tbody id="contrastRows"></tbody>
+</table>
+<p class="note">WCAG suggests 3:1 for graphics that carry meaning. The lowest step can sit under that on purpose, since the legend and callout also name each category in text.</p>
+</div></details>
+
+<details class="acc"><summary><span>Share and handoff</span><svg class="chev2" width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 7.5 L10 12.5 L15 7.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></summary><div class="acc-b">
+<label for="link" class="sr">Share link</label>
+<input type="text" class="linkbox" id="link" readonly>
+<div class="btns">
+<button type="button" class="primary" id="copyLink">Copy link</button>
+<button type="button" id="reset">Reset</button>
+</div>
+<p class="note" id="copyMsg" role="status"></p>
+<label for="hexList" style="font-size:13px;display:block;margin:10px 0 4px">Hex values</label>
+<textarea id="hexList" readonly></textarea>
+</div></details>
+
+</aside>
+
+</div>
+</div>
+
+<script>
+(function(){
+  var CATS = ["Lowest","Low","Below Average","Above Average","High","Highest"];
+  var PRESETS = {
+    teal:{name:"Teal to pink", colors:["#009392","#39b185","#9ccb86","#e9e29c","#eeb479","#e88471"]},
+    viridis:{name:"Viridis (green→purple)", colors:["#35B779","#2C7F8E","#31688E","#3B4A8D","#423A8F","#440154"]},
+    amber:{name:"Amber to brown", colors:["#FFF0B3","#FDDD80","#FBC04D","#F29A2E","#CF6A1A","#8F3B0F"]},
+
+    purple:{name:"Haven purple", colors:["#E9D9F7","#D0ACEB","#B384DC","#9666CC","#7A4BB3","#5C2E8C"]},
+    gyr:{name:"Green to yellow to amber", colors:["#4A7C4E","#7BA84F","#D4BC52","#E8995C","#F29A2E","#CF6A1A"]}
+  };
+  var POLYS = [
+    "23.3,-420 -526.6,-420 -474.2,-106.6 11.8,-325.6",
+    "486.4,-270.8 468.1,-420 23.3,-420 5.1,-270.6",
+    "598.2,-420 468.1,-420 487,-267.1 603,-301.9",
+    "598.2,-420 609.3,-145 709.4,-168.3 903.6,-218.6 890.6,-66.8 971,-420",
+    "1111,-420 971,-420 948.5,-321 1119.2,-326.8",
+    "1141.8,-69.5 1150.6,-133.4 1190,-420 1111,-420",
+    "1347,-420 1209.9,-420 1228.1,-305.2 1378.8,-333.2",
+    "2000,-420 1347,-420 1378.8,-333.2 1474,-350.8 1514.5,-355.9 1568.2,-172.9 1696.3,-189.3 1706.9,-379.3 1673.1,-375.8 2000,-416.7",
+    "2000,-416.7 1707,-380 1696.3,-189.3 2000,-228.3",
+    "-602.4,-420 -800,-420 -800,-123.2 -577.7,-153.4",
+    "-526.6,-420 -602.4,-420 -569.4,-63.7 -474.2,-106.6",
+    "510.5,-134.7 486.4,-270.8 5.1,-270.6 -37,76.4",
+    "487,-267.1 512.6,-122.5 609.3,-145 603,-301.9",
+    "948.5,-321 925.4,-219.3 1000,164.7 1097.8,161.7 1090,150 1135,-20 1141.8,-69.5 1119.2,-326.8",
+    "1190,-420 1157.6,-184.5 1244.8,-199.4 1209.9,-420",
+    "1596.8,-75.4 1602.7,-177.3 1568.2,-172.9 1514.5,-355.9 1474,-350.8 1228.1,-305.2 1298.4,138.5 1391.9,124.3 1443.5,113.9 1454.1,110.1 1468.2,102.6 1632.9,47.6",
+    "1602.7,-177.3 1596.8,-75.4 1632.9,47.6 2000,-75 2000,-228.3",
+    "-800,-123.2 -800,247 -542,231.5 -577.7,-153.4",
+    "-569.4,-63.7 -542,231.5 -422.1,224.2 -195,137 -309.6,-180.7",
+    "-195,137 -37,76.4 11.8,-325.6 -309.6,-180.7",
+    "513.5,-117.7 510.5,-134.7 -37,76.4 -47.5,162.6 527.2,61.6 505.5,-115.6",
+    "709.4,-168.3 512.6,-122.5 513.5,-117.7 505.5,-115.6 538.8,155.8 590,152.8 649.2,152.4 830.6,159.9 863.4,47.9 890.6,-66.8 903.6,-218.6",
+    "950.8,-88.2 925.4,-219.3 870.2,21.3 852.9,86.5 830.6,159.9 860,161.3",
+    "860,161.3 1000,164.7 950.8,-88.2 939.1,-55.9",
+    "1157.6,-184.5 1135,-20 1090,150 1097.8,161.7 1180.9,154.4 1298.4,138.5 1244.8,-199.4",
+    "1721.5,18 1732.7,120.4 1734.7,266.3 2000,173.8 2000,-75",
+    "-422.1,224.2 -52.2,201.9 -37,76.4",
+    "-52.2,201.9 -20,200 -334.8,219 -333.8,231 176.7,241.5 190,288.6 316,252.3 299.4,180.6 440,172 492.4,161.3 538.8,155.8 527.2,61.6 -47.5,162.6",
+    "749.5,371 795.7,258.5 830.6,159.9 664.3,152.7 604.6,152.5 558.5,154.3 582,377.4",
+    "830.6,159.9 795.7,258.5 749.5,371 1205.4,323.1 1097.8,161.7 978.4,164.7",
+    "1391.9,124.3 1180.9,154.4 1097.8,161.7 1210,330 1247.3,401.4 1543.6,333 1734.7,266.3 1732.7,120.4 1721.5,18 1470,102 1443.5,113.9",
+    "-734,243 -800,247 -800,481 -731.4,483.1",
+    "-734,243 -731.4,483.1 -625.7,486.4 -699,240.9",
+    "-699,240.9 -637.7,446.3 -319.7,393.1 -334.8,219",
+    "-625.7,486.4 -508.7,490 -313.9,459.1 -319.7,393.1 -637.7,446.3",
+    "-205.6,441.9 -226.7,233.2 -333.8,231 -313.9,459.1",
+    "-508.7,490 -38.4,504.4 -62.8,419.3",
+    "-110.3,426.8 -125.9,235.3 -226.7,233.2 -205.6,441.9",
+    "79.8,396.7 70.6,239.3 -125.9,235.3 -110.3,426.8",
+    "176.7,241.5 70.6,239.3 79.8,396.4 137.4,387.4 213.2,371",
+    "-38.4,504.4 377.2,517.4 339.8,355.5 -62.8,419.3",
+    "316,252.3 190,288.6 213.2,371 137.4,387.4 339.8,355.5",
+    "558.5,154.3 492.4,161.3 440,172 299.4,180.6 377.2,517.4 460,520 598.6,535",
+    "673.4,545.6 692.6,496.7 749.2,371.6 582,377.4 598.6,535",
+    "749.5,371 692.6,496.7 673.4,545.6 787.7,564.1 895.5,583.6 840.1,361.5",
+    "895.5,583.6 1106.8,625.7 1081.4,336.1 840.1,361.5",
+    "1106.8,625.7 1189.5,643 1325.7,551.8 1205.4,323.1 1081.4,336.1",
+    "1247.3,401.4 1325.7,551.8 1357,526.2 1380,503.8 1401.9,478.7 1445.4,421.4 1459.6,406.3 1472.7,395.2 1480,390 1637.2,311.4",
+    "2000,173.8 1797.7,245.4 1816.7,242.3 1677.8,286.2 1543.6,333 1639.4,310.3 1674.7,471.5 1676,569.7 1686.8,603.8 2000,550.4",
+    "-592.1,487.4 -793.7,481.2 -598.9,945.1",
+    "-490.3,620.6 -447.9,722.6 -189.8,652.4 -291.5,647.5 -192.2,630",
+    "-521.1,489.6 -503,590 -490.3,620.6 -192.2,630 -291.5,647.5 -189.8,652.4 313.8,515.4",
+    "171.4,554.2 26.1,593.7 85.3,783.5 200.6,748.1",
+    "644.4,638.5 673.4,545.6 559.4,530.1 582.1,647.2",
+    "673.4,545.6 652.8,609 629.1,697.3 810.3,658.7 798.9,566.1",
+    "1189.5,643 1008.9,605.7 1016.4,821.9 1032,794.2 1047.1,772.2 1081.4,731.8 1127.2,689.6",
+    "1189.5,643 1382,684.6 1737.6,763.1 1676,569.7 1674.7,471.5 1639.4,310.3 1480,390 1472.7,395.2 1448.1,418.2 1395.2,486.9 1357,526.2 1314.7,559.9",
+    "1686.8,603.8 1737.6,763.1 2000,821 2000,550.4",
+    "-521.1,489.6 -592.1,487.4 -603,1220 -544.3,1220 -496.2,606.4 -503,590",
+    "26.1,593.7 -76.9,621.7 -26.7,792.9 55.7,1049.1 157.7,1016.2",
+    "594.5,832.7 644.4,638.5 582.1,647.2 559.4,530.1 460,520 313.8,515.4 171.4,554.2 248.4,1065.8 275.5,1220 467,1220 504.5,1107.2 578.1,1110.9 559.9,940.4",
+    "1008.9,605.7 798.9,566.1 842.2,918.1 983.1,907.7 1003.3,851.2 1016.4,821.9",
+    "1810.6,779.2 1189.5,643 1134.1,684 1093.9,719.2 1057.9,758.2 1032,794.2 1014.4,825.7 1003.3,851.2 924.7,1071.8 1820.7,959.7",
+    "-793.7,481.2 -800,481 -800,1220 -603,1220 -598.9,945.1",
+    "-544.3,1220 -303.2,1220 -393.6,853.2 -496.2,606.4",
+    "-447.9,722.6 -393.6,853.2 -328.9,1115.8 -297.7,1220 -241.2,1220 -257.2,1181.6 -316.1,686.7",
+    "-193.9,1220 -243,1025.3 -293.3,878.1 -257.2,1181.6 -241.2,1220",
+    "-293.3,878.1 -243,1025.3 -193.9,1220 -67.8,1220 -184.9,651 -316.1,686.7",
+    "110.7,1220 -26.7,792.9 -76.9,621.7 -184.9,651 -67.8,1220",
+    "222.9,896.1 200.6,748.1 85.3,783.5 201.7,1157.5",
+    "629.1,697.3 594.5,832.7 559.9,940.4 578.1,1110.9 602.7,1112.1 862.5,1083.8 810.3,658.7",
+    "911.1,1109.9 983.1,907.7 842.2,918.1 877.4,1204.9 872,1220 924.8,1220",
+    "924.7,1071.8 911.1,1109.9 913.4,1128.1 1826.2,1059.2 1820.7,959.7",
+    "2000,821 1810.6,779.2 1835.1,1220 2000,1220",
+    "110.7,1220 196.7,1220 201.7,1157.5 157.7,1016.2 55.7,1049.1",
+    "196.7,1220 271.7,1220 222.9,896.1 201.7,1157.5",
+    "862.5,1083.8 602.7,1112.1 504.5,1107.2 467,1220 872,1220 877.4,1204.9",
+    "924.8,1220 1835.1,1220 1825.9,1059.2 913.4,1128.1"
+  ];
+  var LISTING = 45;
+  var DATA = {
+    overall:[1, 1, 1, 3, 3, 3, 0, 1, 2, 1, 2, 0, 1, 4, 2, 2, 0, 0, 0, 2, 1, 3, 5, 5, 4, 1, 0, 2, 5, 5, 5, 2, 0, 3, 3, 3, 3, 4, 2, 2, 2, 0, 2, 4, 5, 3, 5, 5, 4, 2, 4, 4, 3, 4, 4, 4, 5, 3, 3, 1, 2, 4, 4, 2, 3, 3, 1, 3, 3, 3, 2, 2, 4, 3, 1, 1, 1, 4],
+    violent:[2, 2, 2, 3, 3, 3, 0, 1, 2, 1, 3, 1, 1, 3, 2, 2, 0, 1, 4, 4, 2, 1, 5, 4, 5, 0, 3, 3, 4, 5, 4, 3, 1, 4, 4, 4, 3, 4, 4, 3, 3, 1, 3, 5, 5, 3, 5, 5, 0, 2, 2, 3, 2, 5, 5, 4, 3, 2, 3, 0, 3, 4, 2, 2, 1, 1, 0, 0, 0, 2, 2, 2, 4, 4, 1, 1, 1, 3],
+    property:[0, 1, 1, 3, 3, 3, 0, 2, 2, 1, 1, 0, 1, 3, 2, 3, 2, 0, 0, 1, 2, 4, 5, 4, 4, 3, 0, 2, 5, 5, 4, 1, 0, 2, 1, 1, 1, 3, 1, 2, 3, 1, 4, 5, 5, 3, 5, 5, 2, 2, 3, 3, 3, 4, 4, 5, 4, 0, 4, 3, 3, 5, 3, 2, 4, 4, 3, 4, 4, 4, 3, 3, 2, 2, 2, 2, 1, 2]
+  };
+  var TITLES = {overall:"Overall crime", violent:"Violent crime", property:"Property crime"};
+  var BASES = {standard:[238,237,233], light:[244,244,243]};
+
+  function defaults(){
+    return {preset:"gyr", colors:PRESETS.gyr.colors.slice(), opacity:84, gap:2.5, base:"standard", listCat:3, dataset:"overall", vision:"none", layer:"crime", tab:"options", rail:true, zoom:0};
+  }
+  var S = defaults();
+
+  try{
+    var h = location.hash;
+    if(h.indexOf("#s=") === 0){
+      var parsed = JSON.parse(decodeURIComponent(h.slice(3)));
+      var d = defaults();
+      for(var key in d){ if(parsed[key] !== undefined) d[key] = parsed[key]; }
+      if(Array.isArray(d.colors) && d.colors.length === 6) S = d;
+    }
+  }catch(e){}
+
+  function $(id){ return document.getElementById(id); }
+  function hexOk(v){ return /^#[0-9a-fA-F]{6}$/.test(v); }
+  function rgb(hex){ return [1,3,5].map(function(i){ return parseInt(hex.slice(i,i+2),16); }); }
+  function lum(c){
+    var f = function(v){ v/=255; return v <= 0.03928 ? v/12.92 : Math.pow((v+0.055)/1.055, 2.4); };
+    return 0.2126*f(c[0]) + 0.7152*f(c[1]) + 0.0722*f(c[2]);
+  }
+  function ratio(a,b){
+    var la = lum(a), lb = lum(b);
+    var hi = Math.max(la,lb), lo = Math.min(la,lb);
+    return (hi+0.05)/(lo+0.05);
+  }
+  function blend(c, bg, op){ return [0,1,2].map(function(i){ return Math.round(c[i]*op + bg[i]*(1-op)); }); }
+
+  var wrap = $("wrap"), stage = $("stage"), polys = $("polys");
+  var picked = null, lastVals = [];
+  function ordinal(n){ var v = n % 100; if(v >= 11 && v <= 13){ return n + "th"; } return n + ({1:"st",2:"nd",3:"rd"}[n % 10] || "th"); }
+  var SCORE_BASE = [1,3,4,5,7,9];
+  function titleCase(t){ return t.toLowerCase().replace(/(^|\s)\S/g, function(c){ return c.toUpperCase(); }); }
+  function centroid(i){
+    var pts = POLYS[i].split(" "), sx = 0, sy = 0;
+    pts.forEach(function(q){ var xy = q.split(","); sx += +xy[0]; sy += +xy[1]; });
+    return {x:sx / pts.length, y:sy / pts.length};
+  }
+  function placeName(i){
+    if(i === LISTING){ return "Windsor neighborhood, Austin, TX"; }
+    var c = centroid(i), best = null, bd = 1e12;
+    Array.prototype.forEach.call(document.querySelectorAll("#mapLabels text.n"), function(t){
+      var dx = +t.getAttribute("x") - c.x, dy = +t.getAttribute("y") - c.y, d = dx * dx + dy * dy;
+      if(d < bd){ bd = d; best = t.textContent; }
+    });
+    return titleCase(best || "Austin") + " neighborhood, Austin, TX";
+  }
+  function areaScores(i){
+    if(i === LISTING){ return [{cat:S.listCat, score:5}, {cat:1, score:2}, {cat:4, score:7}]; }
+    return ["overall","violent","property"].map(function(k, n){
+      var cat = DATA[k][i];
+      return {cat:cat, score:Math.max(1, Math.min(10, SCORE_BASE[cat] + ((i + n) % 2)))};
+    });
+  }
+  function cardHtml(i){
+    var rows = areaScores(i);
+    var pct = i === LISTING ? 46 : Math.max(1, Math.min(99, rows[0].score * 10 - 5 + (i * 7) % 9));
+    var titles = ["Overall", "Violent crime", "Property crime"];
+    var descs = ["National percentile: " + ordinal(pct), "Assaults, robberies, and violent incidents", "Burglary, theft, and property-related incidents"];
+    var html = '<div class="cc-head"><div><div class="cc-title">Crime scores</div><div class="cc-sub">' + placeName(i) + '</div></div>' +
+      '<button type="button" class="cc-x" aria-label="Close crime scores"><svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><path d="M5 5 L17 17 M17 5 L5 17" stroke="#1A1A1A" stroke-width="2" stroke-linecap="round" fill="none"/></svg></button></div>';
+    rows.forEach(function(r, n){
+      var pl = PILLS[r.cat];
+      html += '<div class="cc-row">' + sbox(r.score) + '<div><div class="otitle"><b class="t">' + titles[n] + '</b>' +
+        '<span class="pill" style="background:' + pl.bg + ';color:' + pl.fg + '">' + CATS[r.cat] + '</span></div>' +
+        '<div class="cc-desc">' + descs[n] + '</div></div></div>';
+    });
+    html += '<p class="cc-fine">Crime Score: 1 (lowest 10% of U.S. zip codes) to 10 (highest 10%). Based on index values from <u>Precisely</u>; may differ from other sites.</p>';
+    return html;
+  }
+  var svgEl = polys.ownerSVGElement;
+  function mapPoint(e){
+    var r = svgEl.getBoundingClientRect();
+    return {x:(e.clientX - r.left) * 1440 / r.width, y:(e.clientY - r.top) * 836 / r.height};
+  }
+  stage.addEventListener("click", function(e){
+    if(e.target.closest && e.target.closest(".cc-x")){ picked = null; render(false); return; }
+    var poly = e.target.closest ? e.target.closest("polygon[data-i]") : null;
+    if(poly && polys.contains(poly)){
+      var pt = mapPoint(e);
+      picked = {i:+poly.getAttribute("data-i"), x:pt.x, y:pt.y};
+      render(false);
+    } else if(picked && !(e.target.closest && e.target.closest("#callout"))){
+      picked = null; render(false);
+    }
+  });
+  polys.addEventListener("keydown", function(e){
+    if((e.key === "Enter" || e.key === " ") && e.target.getAttribute && e.target.getAttribute("data-i") !== null){
+      e.preventDefault();
+      var keyIdx = +e.target.getAttribute("data-i");
+      picked = {i:keyIdx, x:910, y:440};
+      render(false);
+      var np = polys.querySelector('polygon[data-i="' + keyIdx + '"]');
+      if(np && np.focus){ np.focus(); }
+    }
+  });
+  document.addEventListener("keydown", function(e){
+    if(e.key === "Escape" && picked){ picked = null; render(false); }
+  });
+
+  /* Build static controls once */
+  var presetsEl = $("presets");
+  var suggestedKey = "gyr";
+  var explorationKeys = ["viridis", "teal", "amber", "purple"];
+  
+  function addPresetBtn(k, isSelected){
+    var b = document.createElement("button");
+    b.type = "button";
+    b.dataset.preset = k;
+    b.setAttribute("data-selected", isSelected ? "true" : "false");
+    b.innerHTML = '<span>' + PRESETS[k].name + '</span><div class="strip">' + PRESETS[k].colors.map(function(c){ return '<span style="background:' + c + '"></span>'; }).join("") + '</div>';
+    b.addEventListener("click", function(){
+      document.querySelectorAll("#presets button").forEach(function(btn){ btn.setAttribute("data-selected", "false"); });
+      b.setAttribute("data-selected", "true");
+      S.preset = k; S.colors = PRESETS[k].colors.slice(); render(true);
+    });
+    return b;
+  }
+  
+  // Suggested section
+  var sugLabel = document.createElement("div");
+  sugLabel.style.cssText = "font-size:13px;font-weight:600;margin-bottom:10px;color:var(--fg)";
+  sugLabel.textContent = "Suggested";
+  presetsEl.appendChild(sugLabel);
+  
+  if(PRESETS[suggestedKey]){
+    var sugBtn = addPresetBtn(suggestedKey, true);
+    presetsEl.appendChild(sugBtn);
+  }
+  
+  // Divider
+  var divider = document.createElement("div");
+  divider.style.cssText = "height:1px;background:var(--line);margin:16px 0";
+  presetsEl.appendChild(divider);
+  
+  // Explorations section
+  var expLabel = document.createElement("div");
+  expLabel.style.cssText = "font-size:13px;font-weight:600;margin-bottom:10px;color:var(--fg)";
+  expLabel.textContent = "Explorations";
+  presetsEl.appendChild(expLabel);
+  
+  var btnContainer = document.createElement("div");
+  btnContainer.className = "explorations-grid";
+  explorationKeys.forEach(function(k){ 
+    if(PRESETS[k]) {
+      btnContainer.appendChild(addPresetBtn(k, false));
+    }
+  });
+  presetsEl.appendChild(btnContainer);
+
+  var rowsEl = $("colorRows");
+  for(var i = 5; i >= 0; i--){
+    (function(i){
+      var row = document.createElement("div"); row.className = "crow";
+      row.innerHTML = '<label for="cp' + i + '">' + CATS[i] + '</label>' +
+        '<input type="color" id="cp' + i + '" aria-label="' + CATS[i] + ' color">' +
+        '<input type="text" class="hex" id="ct' + i + '" maxlength="7" spellcheck="false" aria-label="' + CATS[i] + ' hex value">';
+      rowsEl.appendChild(row);
+      $("cp"+i).addEventListener("input", function(e){ S.colors[i] = e.target.value.toUpperCase(); S.preset = "custom"; render(false); });
+      $("ct"+i).addEventListener("input", function(e){
+        var v = e.target.value.trim(); if(v.charAt(0) !== "#") v = "#" + v;
+        if(hexOk(v)){ S.colors[i] = v.toUpperCase(); S.preset = "custom"; render(false, i); }
+      });
+    })(i);
+  }
+
+  var listSel = $("listCat");
+  CATS.forEach(function(c,i){ var o = document.createElement("option"); o.value = i; o.textContent = c; listSel.appendChild(o); });
+
+  $("legendDs").addEventListener("change", function(e){ S.dataset = e.target.value; render(false); });
+  $("legendClose").addEventListener("click", function(){ S.layer = "none"; render(false); });
+
+  $("zoomSel").addEventListener("change", function(e){ S.zoom = +e.target.value; render(false); });
+  $("zoomOut").addEventListener("click", function(){ S.zoom = -1; render(false); });
+  $("zoomIn").addEventListener("click", function(){ S.zoom = 0; render(false); });
+
+  $("opacity").addEventListener("input", function(e){ S.opacity = +e.target.value; render(false); });
+  $("gap").addEventListener("input", function(e){ S.gap = +e.target.value; render(false); });
+  $("base").addEventListener("change", function(e){ S.base = e.target.value; render(false); });
+  $("dataset").addEventListener("change", function(e){ S.dataset = e.target.value; render(false); });
+  listSel.addEventListener("change", function(e){ S.listCat = +e.target.value; render(false); });
+  document.querySelectorAll("input[name='vision']").forEach(function(radio){
+    radio.addEventListener("change", function(e){ S.vision = e.target.value; render(false); });
+  });
+  $("reset").addEventListener("click", function(){ S = defaults(); render(true); $("copyMsg").textContent = ""; });
+  $("copyLink").addEventListener("click", function(){
+    var link = $("link"); var msg = $("copyMsg");
+    var done = function(){ msg.textContent = "Link copied."; };
+    var fail = function(){ link.focus(); link.select(); msg.textContent = "Select the link and copy it."; };
+    try{
+      if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(link.value).then(done, fail); }
+      else { fail(); }
+    }catch(e){ fail(); }
+  });
+
+  function fit(){
+    var w = wrap.clientWidth; var s = w / 1440;
+    stage.style.transform = "scale(" + s + ")";
+    wrap.style.height = (900 * s) + "px";
+  }
+  if(window.ResizeObserver){ new ResizeObserver(fit).observe(wrap); }
+  window.addEventListener("resize", fit);
+
+  function render(syncInputs, skipIdx){
+    var root = document.documentElement;
+    for(var i = 0; i < 6; i++){
+      stage.style.setProperty("--c"+i, S.colors[i]);
+      document.body.style.setProperty("--c"+i, S.colors[i]);
+    }
+    stage.style.setProperty("--op", S.opacity/100);
+    stage.style.setProperty("--gap", S.gap + "px");
+    stage.setAttribute("data-base", S.base);
+    stage.style.filter = S.vision === "none" ? "none" : "url(#v-" + S.vision + ")";
+
+    var vals = DATA[S.dataset].slice();
+    vals[LISTING] = S.listCat;
+    polys.innerHTML = POLYS.map(function(p,idx){
+      var extra = idx === LISTING ? ' tabindex="0" role="button" aria-label="Show the crime level for the listing’s area"' : '';
+      return '<polygon class="k' + vals[idx] + '" data-i="' + idx + '"' + extra + ' points="' + p + '"/>';
+    }).join("");
+    lastVals = vals;
+
+    if(picked){
+      var cl = $("callout");
+      cl.innerHTML = cardHtml(picked.i);
+      cl.style.left = Math.max(8, Math.min(1440 - 388, picked.x - 190)) + "px";
+      var above = picked.y - 384;
+      cl.style.top = (above >= 116 ? above : Math.min(picked.y + 24, 836 - 372)) + "px";
+    }
+    $("legendDs").value = S.dataset;
+    stage.style.setProperty("--zoom", S.zoom ? "0.55" : "1");
+    $("zoomSel").value = String(S.zoom);
+    $("zoomIn").setAttribute("aria-disabled", S.zoom === 0 ? "true" : "false");
+    $("zoomOut").setAttribute("aria-disabled", S.zoom === -1 ? "true" : "false");
+
+    Array.prototype.forEach.call(presetsEl.children, function(b){
+      b.setAttribute("aria-pressed", b.dataset.preset === S.preset ? "true" : "false");
+    });
+
+    for(var k = 0; k < 6; k++){
+      $("cp"+k).value = S.colors[k].toLowerCase();
+      if(k !== skipIdx) $("ct"+k).value = S.colors[k];
+    }
+    $("opacity").value = S.opacity; $("opacityVal").textContent = S.opacity + "%";
+    $("gap").value = S.gap; $("gapVal").textContent = S.gap + " px";
+    $("base").value = S.base; $("dataset").value = S.dataset; listSel.value = S.listCat;
+    document.querySelectorAll("input[name='vision']").forEach(function(radio){ radio.checked = (radio.value === S.vision); });
+
+    var bg = BASES[S.base]; var op = S.opacity/100;
+    var blended = S.colors.map(function(c){ return blend(rgb(c), bg, op); });
+    var rows = "";
+    for(var m = 5; m >= 0; m--){
+      var r = ratio(blended[m], bg);
+      rows += '<tr><td>' + CATS[m] + '</td><td><span class="sw sw' + m + '"></span>' + S.colors[m] + '</td><td>' + r.toFixed(1) + ' : 1</td></tr>';
+    }
+    $("contrastRows").innerHTML = rows;
+
+    var warnEl = $("warn"); var issues = [];
+    for(var n = 0; n < 5; n++){
+      var a = lum(blended[n]), b2 = lum(blended[n+1]);
+      if(b2 >= a){ issues.push("The step order is not getting steadily darker, so the scale may read out of order."); break; }
+    }
+    var minRatio = 99, minIdx = 0;
+    for(var q = 0; q < 5; q++){
+      var rr = ratio(blended[q], blended[q+1]);
+      if(rr < minRatio){ minRatio = rr; minIdx = q; }
+    }
+    if(minRatio < 1.25){ issues.push(CATS[minIdx] + " and " + CATS[minIdx+1] + " are very close (" + minRatio.toFixed(2) + " : 1) and may be hard to tell apart."); }
+    if(issues.length){ warnEl.hidden = false; warnEl.textContent = issues.join(" "); } else { warnEl.hidden = true; warnEl.textContent = ""; }
+
+    var lines = [];
+    for(var p = 5; p >= 0; p--){ lines.push((CATS[p] + "              ").slice(0,15) + S.colors[p]); }
+    lines.push(""); lines.push("Area opacity    " + S.opacity + "%"); lines.push("Area gap        " + S.gap + " px");
+    $("hexList").value = lines.join("\n");
+
+    var encoded = "#s=" + encodeURIComponent(JSON.stringify(S));
+    $("link").value = location.href.split("#")[0] + encoded;
+    try{ history.replaceState(null, "", encoded); }catch(e){}
+    syncRail();
+    fit();
+  }
+
+  /* ---------- Left rail ---------- */
+  var openSecs = {value:false, home:false, env:false, market:false, transport:false, hood:true, nearby:false, schools:false};
+  var lastTab = null;
+  /* Haven Tag variants for the crime category labels */
+  var PILLS = [
+    {bg:"#2C6E3A", fg:"#FFFFFF"},
+    {bg:"#D8F0DB", fg:"#1F4D2C"},
+    {bg:"#D2EEDD", fg:"#1D4A35"},
+    {bg:"#FFF0C9", fg:"#4D3B00"},
+    {bg:"#FFDDB0", fg:"#5A2E00"},
+    {bg:"#FDE0E0", fg:"#7A1414"}
+  ];
+
+  function ico(inner, size){
+    size = size || 22;
+    return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 22 22" aria-hidden="true" fill="none" stroke="#1A1A1A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none">' + inner + '</svg>';
+  }
+  var CHEV_UP = '<svg class="chev" width="20" height="20" viewBox="0 0 20 20" aria-hidden="true" style="flex:none"><path d="M5 12.5 L10 7.5 L15 12.5" fill="none" stroke="#1A1A1A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  var ICON_VALUE = ico('<path d="M5 3h12v16l-2-1.5L13 19l-2-1.5L9 19l-2-1.5L5 19z"/><path d="M13 8.2h-2.2a1.2 1.2 0 0 0 0 2.4h1.4a1.2 1.2 0 0 1 0 2.4H9.5M11 7v1.2M11 13v1.2"/>');
+  var ICON_HOME = ico('<path d="M4 10l7-6 7 6v9H4z"/><path d="M9 19v-5h4v5"/>');
+  var ICON_ENV = ico('<circle cx="11" cy="8" r="5"/><path d="M11 13v6M7 19h8"/>');
+  var ICON_MARKET = ico('<rect x="3" y="3" width="16" height="16" rx="3"/><path d="M7.5 15V11M11 15V8M14.5 15V12"/>');
+  var ICON_BUS = ico('<rect x="4" y="3" width="14" height="14" rx="3"/><path d="M4 11H18M8 20V17M14 20V17"/><circle cx="8" cy="14" r="0.6"/><circle cx="14" cy="14" r="0.6"/>');
+  var ICON_PIN = ico('<path d="M11 20C7 15.5 5 12.5 5 9.5a6 6 0 0 1 12 0C17 12.5 15 15.5 11 20Z"/><circle cx="11" cy="9.5" r="2.2"/>');
+  var ICON_GROC = ico('<path d="M3 8h16l-1.5 9h-13z"/><path d="M7 8l3-4M15 8l-3-4"/>', 18);
+  var ICON_REST = ico('<path d="M6 3v6a2 2 0 0 0 2 2v8M10 3v6M8 3v8M15 3c-2 2-2 6 0 8v8"/>', 18);
+  var ICON_PARK = ico('<circle cx="11" cy="9" r="5"/><path d="M11 14v6M8 20h6"/>', 18);
+  var ICON_SHOP = ico('<path d="M4 9l1.5-5h11L18 9"/><path d="M4 9a2.3 2.3 0 0 0 4.5 0 2.3 2.3 0 0 0 5 0 2.3 2.3 0 0 0 4.5 0M5 11v8h12v-8"/>', 18);
+
+  function radioRow(val, label){
+    return '<label class="ropt"><input type="radio" name="layer" value="' + val + '"><span>' + label + '</span></label>';
+  }
+  function section(key, title, icon, rows){
+    return '<div class="sec">' +
+      '<button type="button" class="sec-h" data-sec="' + key + '" aria-expanded="true" aria-controls="sec-' + key + '">' +
+      (icon || '') + '<span>' + title + '</span>' + CHEV_UP + '</button>' +
+      '<div class="sec-b" id="sec-' + key + '">' + rows + '</div></div>';
+  }
+  function circ(n, bg){
+    return '<div class="circ" style="background:' + bg + '"><b>' + n + '</b><i></i><span>10</span></div>';
+  }
+  function sbox(n){
+    return '<div class="sbox"><b>' + n + '</b><i></i><span>10</span></div>';
+  }
+  function mini(n){
+    if(n === null){ return '<span class="mini" role="img" aria-label="No score available"></span>'; }
+    return '<span class="mini"><b>' + n + '</b>/10</span>';
+  }
+  function crimeRow(label, n){
+    return '<div class="crl">' + mini(n) + '<span>' + label + '</span></div>';
+  }
+  function hoodRow(n, bg, icon, title, text){
+    return '<div class="hrow">' + circ(n, bg) + '<div><div class="htitle">' + icon + '<b>' + title + '</b></div><p>' + text + '</p></div></div>';
+  }
+  var STARS = '<span class="stars" role="img" aria-label="4.5 out of 5 stars">★★★★<span>★</span></span>';
+  function schoolRow(n, name, meta){
+    return '<div class="hrow">' + circ(n, "#0B4F2E") + '<div><button type="button" class="linkbtn" style="font-size:14px;font-weight:600">' + name + '</button>' +
+      '<div class="smeta">' + meta + '</div><div class="smeta">' + STARS + ' 24 reviews</div></div></div>';
+  }
+
+  function buildRail(){
+    var r = $("rail");
+
+    var optionsHtml =
+      '<div class="opts-scroll" id="optsScroll">' +
+        section("value", "Value", ICON_VALUE,
+          radioRow("estimate", "Estimate") + radioRow("estsqft", "Estimate / sqft")) +
+        section("home", "Home", ICON_HOME,
+          radioRow("lotsize", "Lot size") + radioRow("lotslope", "Lot slope") + radioRow("homesize", "Home size") + radioRow("yearbuilt", "Year built")) +
+        section("env", "Environment", ICON_ENV,
+          radioRow("flood", "Flood") + radioRow("wildfire", "Wildfire") + radioRow("heat", "Heat") +
+          radioRow("wind", "Wind") + radioRow("air", "Air") + radioRow("noise", "Noise")) +
+        section("market", "Market", ICON_MARKET,
+          radioRow("hotness", "Market Hotness") + radioRow("soldlist", "Sold price vs. list price*") +
+          radioRow("soldsqft", "Sold price / sqft*") + radioRow("dom", "Days on market*")) +
+        section("transport", "Transportation", ICON_BUS,
+          radioRow("transit", "Public transit") + radioRow("bike", "Bike lanes") + radioRow("traffic", "Traffic")) +
+        section("hood", "Neighborhood", ICON_PIN,
+          radioRow("pins", "Neighborhood pins") + radioRow("crime", "Crime")) +
+        section("nearby", "Nearby", "", '<p class="muted-p">Options not included in this preview.</p>') +
+        section("schools", "Schools", "", '<p class="muted-p">Options not included in this preview.</p>') +
+      '</div>' +
+      '<div class="opts-foot"><button type="button" class="reset">Reset</button></div>';
+
+    var hoodHtml =
+      '<section class="card">' +
+        '<h3 style="font-size:17px;line-height:1.3;margin-bottom:6px">Little Havvana neighborhood in Miami, FL</h3>' +
+        hoodRow(7, "#1D4DB3", ICON_GROC, "Groceries", "Fresh Plus Grocery (0.9 mi), Thom’s Market (1.0 mi), Whole Foods Market (1.2 mi)") +
+        hoodRow(7, "#1D4DB3", ICON_REST, "Restaurants", "East Side Pies (0.2 mi), Stiles Switch BBQ (0.5 mi), Michi Ramen (0.5 mi)") +
+        hoodRow(7, "#1D4DB3", ICON_PARK, "Parks", "Brentwood Park &amp; Pool (0.9 mi), Central Park I (1.0 mi), Highland Neighborhood Park (1.4 mi)") +
+        hoodRow(6, "#2A62D6", ICON_SHOP, "Shopping", "Brazos Trading (0.5 mi), Side Kitsch Vintage (0.5 mi), Spruce (0.9 mi)") +
+        '<div style="padding-top:10px"><button type="button" class="linkbtn" style="font-size:14px">Show more</button></div>' +
+        '<p class="src">Scores provided by Local Logic | Locations provided by Yelp</p>' +
+      '</section>' +
+
+      '<section class="card" id="crimeCard">' +
+        '<h3>Crime</h3>' +
+        '<div class="ov">' + sbox(5) +
+          '<div><div class="otitle"><b>Overall crime</b><span class="pill" data-pill="overall"></span></div><div class="pct">Windsor neighborhood<span class="sepbar">|</span>National percentile: 46th</div></div>' +
+        '</div>' +
+        '<div class="sub-h">' + sbox(2) + '<b>Violent crime</b><span class="pill" data-pill="violent"></span></div>' +
+        crimeRow("Aggravated Assault", 3) + crimeRow("Robbery", 4) + crimeRow("Sexual Assault", 2) + crimeRow("Murder", 1) +
+        '<div class="sub-h" style="border-top:1px solid var(--rail-line);margin-top:6px;padding-top:12px">' + sbox(7) + '<b>Property crime</b><span class="pill" data-pill="property"></span></div>' +
+        crimeRow("Burglary", 9) + crimeRow("Arson", 6) + crimeRow("Larceny/Theft", 6) + crimeRow("Auto Theft", 2) +
+        '<p class="fine">About This Crime Score: Each zip code is scored 1 to 10 by ranking all U.S. zip codes by crime index value and dividing them into ten equal-sized groups. A score of 1 represents the lowest 10% nationally; a score of 10 represents the highest 10%. Scores are based on index values calculated by <u>Precisely</u> using its proprietary methodology and data sources, which may differ from crime scores displayed on other websites that use different providers or methodologies. Provided for informational purposes only.</p>' +
+      '</section>' +
+
+      '<section class="card">' +
+        '<div class="cardhead"><h3>Schools</h3><button type="button" class="linkbtn" style="font-size:14px">See all</button></div>' +
+        schoolRow(8, "Brentwood Elementary School", "Grades K-5 | 0.5 mi away | 218 students") +
+        schoolRow(10, "Lamar Middle School", "Grades 6-8 | 1.4 mi away | 511 students") +
+        schoolRow(10, "Mccallum High School", "Grades 9-12 | 1.5 mi away | 511 students") +
+      '</section>';
+
+    r.innerHTML =
+      '<div class="tabs"><div class="tablist" role="tablist" aria-label="Map panel sections">' +
+        '<button type="button" role="tab" id="tab-options" data-tab="options" aria-controls="panel-options">Options</button>' +
+        '<button type="button" role="tab" id="tab-comparisons" data-tab="comparisons" aria-controls="panel-comparisons">Comparisons</button>' +
+        '<button type="button" role="tab" id="tab-neighborhood" data-tab="neighborhood" aria-controls="panel-neighborhood">Neighborhood</button>' +
+      '</div></div>' +
+      '<div class="opts" role="tabpanel" id="panel-options" data-panel="options" aria-labelledby="tab-options">' + optionsHtml + '</div>' +
+      '<div class="card stubcard" role="tabpanel" id="panel-comparisons" data-panel="comparisons" aria-labelledby="tab-comparisons">Comparisons (wireframe stub)</div>' +
+      '<div class="hood" role="tabpanel" id="panel-neighborhood" data-panel="neighborhood" aria-labelledby="tab-neighborhood">' + hoodHtml + '</div>';
+
+    r.addEventListener("click", function(e){
+      var t = e.target.closest("[data-tab]");
+      if(t){ S.tab = t.getAttribute("data-tab"); render(false); return; }
+      var h = e.target.closest(".sec-h");
+      if(h){ var k = h.getAttribute("data-sec"); openSecs[k] = !openSecs[k]; syncRail(); return; }
+      if(e.target.closest(".reset")){ S.layer = "none"; render(false); }
+    });
+    r.addEventListener("change", function(e){
+      if(e.target && e.target.name === "layer"){ S.layer = e.target.value; render(false); }
+    });
+    $("railToggle").addEventListener("click", function(){ S.rail = !S.rail; render(false); });
+  }
+
+  function textOn(hex){
+    var c = rgb(hex);
+    return ratio(c, [26,26,26]) >= ratio(c, [255,255,255]) ? "#1A1A1A" : "#FFFFFF";
+  }
+
+  function syncRail(){
+    var r = $("rail");
+    stage.setAttribute("data-rail", S.rail ? "open" : "closed");
+    var tg = $("railToggle");
+    tg.setAttribute("aria-expanded", S.rail ? "true" : "false");
+    tg.setAttribute("aria-label", S.rail ? "Collapse left rail" : "Expand left rail");
+
+    Array.prototype.forEach.call(r.querySelectorAll("[data-tab]"), function(b){
+      b.setAttribute("aria-selected", b.getAttribute("data-tab") === S.tab ? "true" : "false");
+    });
+    Array.prototype.forEach.call(r.querySelectorAll("[data-panel]"), function(p){
+      p.hidden = p.getAttribute("data-panel") !== S.tab;
+    });
+    Array.prototype.forEach.call(r.querySelectorAll('input[name="layer"]'), function(x){
+      x.checked = (x.value === S.layer);
+    });
+    Object.keys(openSecs).forEach(function(k){
+      var h = r.querySelector('[data-sec="' + k + '"]');
+      var b = $("sec-" + k);
+      if(h && b){ h.setAttribute("aria-expanded", openSecs[k] ? "true" : "false"); b.hidden = !openSecs[k]; }
+    });
+
+    var pillCats = {overall:S.listCat, violent:1, property:4};
+    Array.prototype.forEach.call(r.querySelectorAll(".pill"), function(p){
+      var c = pillCats[p.getAttribute("data-pill")];
+      p.style.background = PILLS[c].bg;
+      p.style.color = PILLS[c].fg;
+      p.textContent = CATS[c];
+    });
+
+    var on = S.layer === "crime";
+    polys.style.display = on ? "" : "none";
+    $("listOutline").style.display = on ? "" : "none";
+    if(!on){ picked = null; }
+    $("callout").hidden = !(on && picked);
+    $("legend").style.display = on ? "" : "none";
+    $("otherNote").hidden = !(S.layer !== "crime" && S.layer !== "none");
+
+    if(S.tab === "options" && lastTab !== "options"){
+      var sc = $("optsScroll"), hs = $("sec-hood");
+      if(sc && hs){ sc.scrollTop = Math.max(0, hs.parentNode.offsetTop - 150); }
+    }
+    lastTab = S.tab;
+  }
+
+  buildRail();
+  render(true);
+})();
+</script>
+</body>
+</html>
